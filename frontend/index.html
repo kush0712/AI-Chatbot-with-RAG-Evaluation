@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BarPal.ai — Legal Document Q&A for Startups</title>
+  <meta name="description" content="BarPal.ai — Private, AI-powered legal document analysis for startups and SMEs. Upload your NDAs, contracts and bylaws and ask plain-English questions — powered by Gemma 4 with RAG." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">BarPal.ai</span>
+          <span class="brand-sub">Legal Assistant</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Upload Zone -->
+    <div class="upload-section">
+      <div
+        class="upload-zone"
+        id="uploadZone"
+        role="button"
+        tabindex="0"
+        aria-label="Upload legal document"
+      >
+        <div class="upload-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <p class="upload-primary">Drop your document here</p>
+        <p class="upload-secondary">PDF or DOCX · NDAs, contracts, bylaws</p>
+        <input type="file" id="fileInput" accept=".pdf,.docx,.doc" hidden />
+        <button class="btn-upload" id="browseBtn">Browse files</button>
+      </div>
+      <div class="upload-progress" id="uploadProgress" aria-live="polite">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p class="progress-text" id="progressText">Uploading…</p>
+      </div>
+    </div>
+
+    <!-- Document Library -->
+    <div class="doc-library">
+      <div class="lib-header">
+        <span class="lib-title">Document Library</span>
+        <span class="lib-count" id="docCount">0</span>
+      </div>
+      <div class="doc-filter-wrap">
+        <select id="docFilter" class="doc-filter" aria-label="Filter queries to specific document">
+          <option value="">All documents</option>
+        </select>
+      </div>
+      <ul class="doc-list" id="docList" aria-label="Uploaded documents">
+        <li class="doc-empty">No documents yet.<br/>Upload your first legal document above.</li>
+      </ul>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="sidebar-footer">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Connecting…</span>
+    </div>
+  </aside>
+
+  <!-- ── Main Chat ────────────────────────────────────────────────────────── -->
+  <main class="main" id="mainContent">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <button class="topbar-menu" id="topbarMenu" aria-label="Open sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="topbar-title">
+        <span>Legal Document Q&amp;A</span>
+        <span class="topbar-model">Gemma 4 · RAG</span>
+      </div>
+      <!-- Tab Switcher -->
+      <div class="tab-bar" role="tablist">
+        <button class="tab active" id="tabChat" role="tab" aria-selected="true" aria-controls="panelChat">Chat</button>
+        <button class="tab" id="tabEval" role="tab" aria-selected="false" aria-controls="panelEval">
+          Evaluate
+          <span class="tab-badge">RAGAS</span>
+        </button>
+      </div>
+      <button class="btn-clear" id="clearChatBtn" title="Clear conversation">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+        </svg>
+        Clear chat
+      </button>
+    </header>
+
+    <!-- Chat Panel -->
+    <section class="panel" id="panelChat" role="tabpanel">
+      <div class="chat-area" id="chatArea" role="log" aria-live="polite" aria-label="Chat messages">
+        <!-- Welcome Screen -->
+        <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Private &amp; Confidential
+        </div>
+        <h1 class="welcome-title">Your Private Legal AI</h1>
+        <p class="welcome-sub">Upload your startup's legal documents and ask plain-English questions. All documents stay private — processed locally with Gemma 4.</p>
+
+        <div class="examples-grid">
+          <button class="example-card" data-q="What are the key obligations and restrictions in this NDA?">
+            <div class="example-icon">📋</div>
+            <div class="example-text">
+              <strong>Analyze an NDA</strong>
+              <span>Key obligations and restrictions</span>
+            </div>
+          </button>
+          <button class="example-card" data-q="What are the IP assignment clauses and who owns the intellectual property?">
+            <div class="example-icon">💡</div>
+            <div class="example-text">
+              <strong>IP Ownership</strong>
+              <span>Who owns the intellectual property?</span>
+            </div>
+          </button>
+          <button class="example-card" data-q="What are the termination conditions and notice periods in this contract?">
+            <div class="example-icon">🔚</div>
+            <div class="example-text">
+              <strong>Termination Clauses</strong>
+              <span>Conditions and notice periods</span>
+            </div>
+          </button>
+          <button class="example-card" data-q="Are there any non-compete clauses? What are the duration and scope?">
+            <div class="example-icon">⚠️</div>
+            <div class="example-text">
+              <strong>Non-Compete Risks</strong>
+              <span>Duration and geographic scope</span>
+            </div>
+          </button>
+          <button class="example-card" data-q="What are the liability limitations and indemnification obligations?">
+            <div class="example-icon">🛡️</div>
+            <div class="example-text">
+              <strong>Liability &amp; Indemnification</strong>
+              <span>Cap on damages and obligations</span>
+            </div>
+          </button>
+          <button class="example-card" data-q="Summarize the key terms and any high-risk clauses in this agreement.">
+            <div class="example-icon">📊</div>
+            <div class="example-text">
+              <strong>Full Summary</strong>
+              <span>Key terms and risk assessment</span>
+            </div>
+          </button>
+        </div>
+
+        <p class="welcome-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Upload a document first, then type your question or click an example above
+        </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Evaluate Panel -->
+    <section class="panel hidden" id="panelEval" role="tabpanel">
+      <div class="eval-area">
+        <div class="eval-header">
+          <h2 class="eval-title">RAGAS Evaluation</h2>
+          <p class="eval-sub">Test your RAG pipeline quality with three LLM-as-judge metrics. Gemma 4 scores its own output objectively.</p>
+        </div>
+
+        <div class="eval-input-wrap">
+          <textarea
+            id="evalQuestion"
+            class="eval-input"
+            placeholder="Enter a test question about your uploaded documents…"
+            rows="2"
+            aria-label="Evaluation question"
+          ></textarea>
+          <button class="btn-evaluate" id="evalBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 11 12 14 22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            Run Evaluation
+          </button>
+        </div>
+
+        <!-- Scores -->
+        <div class="eval-results hidden" id="evalResults">
+
+          <!-- Overall Score -->
+          <div class="overall-score-wrap" id="overallScoreWrap">
+            <div class="overall-ring">
+              <svg viewBox="0 0 100 100" class="ring-svg">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#e9ecef" stroke-width="9"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1864ab" stroke-width="9"
+                  stroke-dasharray="264" stroke-dashoffset="264"
+                  stroke-linecap="round" transform="rotate(-90 50 50)"
+                  id="ringProgress"
+                  style="transition: stroke-dashoffset 1s ease;"/>
+              </svg>
+              <div class="ring-label">
+                <span class="ring-pct" id="overallPct">—</span>
+                <span class="ring-text">Overall</span>
+              </div>
+            </div>
+            <div class="overall-info">
+              <h3 class="overall-title">RAG Pipeline Score</h3>
+              <p class="overall-desc">Harmonic mean of all three metrics. Penalises any single weak dimension — a pipeline that retrieves perfectly but hallucinates still scores low.</p>
+            </div>
+          </div>
+
+          <!-- Three Metric Cards -->
+          <div class="metric-cards" id="metricCards"></div>
+
+          <!-- Answer + Sources -->
+          <div class="eval-answer-wrap">
+            <h4 class="eval-section-title">Generated Answer</h4>
+            <div class="eval-answer-box" id="evalAnswerBox"></div>
+          </div>
+
+          <div class="eval-sources-wrap">
+            <h4 class="eval-section-title">Sources Used</h4>
+            <div class="eval-sources" id="evalSources"></div>
+          </div>
+
+        </div>
+
+        <!-- Loading state -->
+        <div class="eval-loading hidden" id="evalLoading">
+          <div class="eval-spinner"></div>
+          <p>Running 3 evaluation metrics in parallel…<br/><span style="color:var(--txt-3);font-size:0.75rem">Gemma 4 is judging faithfulness, relevance, and context precision simultaneously</span></p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Input Area (Chat only) -->
+    <div id="chatInputWrap">
+    <footer class="input-area">
+      <div class="input-wrap">
+        <textarea
+          id="questionInput"
+          class="question-input"
+          placeholder="Ask a question about your legal documents…"
+          rows="1"
+          aria-label="Legal question input"
+        ></textarea>
+        <button class="btn-send" id="sendBtn" aria-label="Send question">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <p class="input-disclaimer">
+        BarPal.ai provides information only, not legal advice. Always consult a qualified attorney for legal decisions.
+      </p>
+    </div><!-- /chatInputWrap -->
+  </main>
+
+  <!-- ── Toast Notification ───────────────────────────────────────────────── -->
+  <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
