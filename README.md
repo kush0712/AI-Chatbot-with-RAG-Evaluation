@@ -26,13 +26,13 @@ Browser (HTML / CSS / JS)
 FastAPI Backend (Python)          ← main.py
         │
   ┌─────┴──────────┐
-  │   RAG Pipeline  │             ← rag_pipeline.py
-  │                 │
-  │  pdfplumber     │  ← parse PDF pages
-  │  python-docx    │  ← parse DOCX paragraphs
-  │  Custom Chunker │  ← recursive split (800 chars, 100 overlap)
+  │   RAG Pipeline │             ← rag_pipeline.py
+  │                │
+  │  pdfplumber    │  ← parse PDF pages
+  │  python-docx   │  ← parse DOCX paragraphs
+  │  Custom Chunker│  ← recursive split (800 chars, 100 overlap)
   │  MiniLM-L6-v2  │  ← embed locally (sentence-transformers, 384-dim)
-  │  ChromaDB       │  ← store & retrieve vectors (HNSW, cosine, local disk)
+  │  ChromaDB      │  ← store & retrieve vectors (HNSW, cosine, local disk)
   └─────┬──────────┘
         │  top-K chunks (default: 5, min score: 0.25)
         ▼
